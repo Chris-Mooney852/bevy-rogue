@@ -13,7 +13,6 @@ fn main() {
         .init_resource::<Map>()
         .add_startup_system(setup)
         .add_system(player_movement)
-        .add_system(draw_map)
         .run()
 }
 
@@ -89,20 +88,14 @@ fn new_map() -> Vec<TileType> {
 }
 
 fn draw_map(
-    map: Res<Map>,
+    tiles: &Vec<TileType>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    texture_atlas_handle: &Handle<TextureAtlas>,
 ) {
-    let mut y = 0.0;
-    let mut x = 0.0;
+    let mut y = -320.0;
+    let mut x = -240.0;
 
-    // Setup the sprite sheet
-    let texture_handle = asset_server.load("spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(16.0, 16.0), 16, 16);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-
-    for tile in map.tiles.iter() {
+    for tile in tiles.iter() {
         // Render a tile depending upon the tile type
         match tile {
             TileType::Floor => {
@@ -111,7 +104,7 @@ fn draw_map(
                     .spawn()
                     .insert_bundle(SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle.clone(),
-                        transform: Transform::from_translation(Vec3::new(0.0, -220.0, 0.0)),
+                        transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
                         sprite: TextureAtlasSprite::new(sprite_idx(0, 2)),
                         ..Default::default()
                     })
@@ -123,7 +116,7 @@ fn draw_map(
                     .spawn()
                     .insert_bundle(SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle.clone(),
-                        transform: Transform::from_translation(Vec3::new(0.0, -220.0, 0.0)),
+                        transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
                         sprite: TextureAtlasSprite::new(sprite_idx(0, 1)),
                         ..Default::default()
                     })
@@ -133,7 +126,7 @@ fn draw_map(
 
         // Move the coordinates
         x += 16.0;
-        if x > 640.0 {
+        if x > 320.0 {
             x = 0.0;
             y += 16.0;
         }
@@ -161,12 +154,14 @@ fn setup(
         .spawn()
         .insert_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle.clone(),
-            transform: Transform::from_translation(Vec3::new(0.0, -220.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
             sprite: TextureAtlasSprite::new(sprite_idx(4, 8)),
             ..Default::default()
         })
         .insert(Player {})
         .insert(Position { x: 10.0, y: 10.0 });
+
+    draw_map(&map.tiles, commands, &texture_atlas_handle);
 }
 
 pub fn sprite_idx(x: i32, y: i32) -> usize {
