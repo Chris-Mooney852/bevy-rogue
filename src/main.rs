@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::Rng;
 
 fn main() {
     App::new()
@@ -84,6 +85,15 @@ fn new_map() -> Vec<TileType> {
         map[map_idx(39, y)] = TileType::Wall;
     }
 
+    let mut rng = rand::thread_rng();
+
+    for _i in 0..50 {
+        let x = rng.gen_range(1..39);
+        let y = rng.gen_range(1..29);
+        let idx = map_idx(x, y);
+        map[idx] = TileType::Wall;
+    }
+
     map
 }
 
@@ -92,8 +102,10 @@ fn draw_map(
     mut commands: Commands,
     texture_atlas_handle: &Handle<TextureAtlas>,
 ) {
-    let mut y = -320.0;
-    let mut x = -240.0;
+    const SPRITE_SIZE: f32 = 16.0;
+    const SPRITE_BUFFER: f32 = 8.0;
+    let mut x = -320.0 + SPRITE_BUFFER;
+    let mut y = -240.0 + SPRITE_BUFFER;
 
     for tile in tiles.iter() {
         // Render a tile depending upon the tile type
@@ -105,7 +117,7 @@ fn draw_map(
                     .insert_bundle(SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle.clone(),
                         transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
-                        sprite: TextureAtlasSprite::new(sprite_idx(0, 2)),
+                        sprite: TextureAtlasSprite::new(sprite_idx(2, 3)),
                         ..Default::default()
                     })
                     .insert(Position { x, y });
@@ -126,8 +138,8 @@ fn draw_map(
 
         // Move the coordinates
         x += 16.0;
-        if x > 320.0 {
-            x = 0.0;
+        if x > 320.0 - SPRITE_SIZE + SPRITE_BUFFER {
+            x = -320.0 + SPRITE_BUFFER;
             y += 16.0;
         }
     }
@@ -154,7 +166,7 @@ fn setup(
         .spawn()
         .insert_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle.clone(),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.1)),
             sprite: TextureAtlasSprite::new(sprite_idx(4, 8)),
             ..Default::default()
         })
