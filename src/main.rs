@@ -71,6 +71,15 @@ fn player_movement(
     }
 }
 
+fn try_move_player(
+    dx: f32,
+    dy: f32,
+    map: Res<Map>,
+    mut query: Query<(&mut Player, &mut Position, &mut Transform)>,
+) {
+
+}
+
 fn new_map() -> Vec<TileType> {
     let mut map = vec![TileType::Floor; 40 * 30];
 
@@ -182,4 +191,14 @@ pub fn sprite_idx(x: i32, y: i32) -> usize {
 
 pub fn map_idx(x: i32, y: i32) -> usize {
     (y as usize * 40) + x as usize
+}
+
+pub fn xy_to_map_idx(x: f32, y: f32) -> usize{
+    const SPRITE_SIZE: f32 = 16.0;
+    const SPRITE_BUFFER: f32 = 8.0;
+
+    let buffed_x = x - SPRITE_SIZE + SPRITE_BUFFER;
+    let buffed_y = y - SPRITE_SIZE + SPRITE_BUFFER;
+
+    map_idx(buffed_x as i32, buffed_y as i32)
 }
