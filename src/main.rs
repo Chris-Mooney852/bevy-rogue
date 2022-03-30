@@ -13,7 +13,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .init_resource::<Map>()
         .add_startup_system(setup)
-        .add_system(player_movement)
+        .add_system(player_input)
         .run()
 }
 
@@ -37,14 +37,19 @@ struct Map {
     tiles: Vec<TileType>,
 }
 
-fn player_movement(
+#[derive(Component)]
+struct Blocking {}
+
+fn player_input(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&mut Player, &mut Position, &mut Transform)>,
+    blocking_entities: Query<(&Blocking, &Position)>, // TODO use a queryset dummy
 ) {
     const MOVE_DISTANCE: f32 = 16.0;
     const SPRITE_BUFFER: f32 = 8.0;
     const X_BOUNDS: f32 = 320.0 - SPRITE_BUFFER;
     const Y_BOUNDS: f32 = 240.0 - SPRITE_BUFFER;
+    let mut blocked = false;
 
     for (mut _player, mut position, mut trans) in query.iter_mut() {
         if keyboard_input.just_pressed(KeyCode::Right) {
@@ -60,24 +65,24 @@ fn player_movement(
             position.y -= MOVE_DISTANCE;
         }
 
-        // Apply movement deltas
-        trans.translation.x += position.x;
-        trans.translation.x = trans.translation.x.clamp(-X_BOUNDS, X_BOUNDS);
-        trans.translation.y += position.y;
-        trans.translation.y = trans.translation.y.clamp(-Y_BOUNDS, Y_BOUNDS);
+        for (_blocking, blocking_position) in blocking_entities.iter() {
+            if position.x == blocking_position.x && position.y == blocking_position.y {
+                blocked = true;
+                break;
+            }
+        }
+
+        if !blocked {
+            // Apply movement deltas
+            trans.translation.x += position.x;
+            trans.translation.x = trans.translation.x.clamp(-X_BOUNDS, X_BOUNDS);
+            trans.translation.y += position.y;
+            trans.translation.y = trans.translation.y.clamp(-Y_BOUNDS, Y_BOUNDS);
+        }
 
         position.x = 0.0;
         position.y = 0.0;
     }
-}
-
-fn try_move_player(
-    dx: f32,
-    dy: f32,
-    map: Res<Map>,
-    mut query: Query<(&mut Player, &mut Position, &mut Transform)>,
-) {
-
 }
 
 fn new_map() -> Vec<TileType> {
@@ -141,6 +146,7 @@ fn draw_map(
                         sprite: TextureAtlasSprite::new(sprite_idx(0, 1)),
                         ..Default::default()
                     })
+                    .insert(Blocking {})
                     .insert(Position { x, y });
             }
         }
@@ -191,14 +197,4 @@ pub fn sprite_idx(x: i32, y: i32) -> usize {
 
 pub fn map_idx(x: i32, y: i32) -> usize {
     (y as usize * 40) + x as usize
-}
-
-pub fn xy_to_map_idx(x: f32, y: f32) -> usize{
-    const SPRITE_SIZE: f32 = 16.0;
-    const SPRITE_BUFFER: f32 = 8.0;
-
-    let buffed_x = x - SPRITE_SIZE + SPRITE_BUFFER;
-    let buffed_y = y - SPRITE_SIZE + SPRITE_BUFFER;
-
-    map_idx(buffed_x as i32, buffed_y as i32)
 }
