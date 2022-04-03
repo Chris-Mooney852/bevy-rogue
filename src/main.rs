@@ -20,7 +20,7 @@ fn main() {
 #[derive(Component)]
 struct Player {}
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 struct Position {
     x: f32,
     y: f32,
@@ -42,8 +42,8 @@ struct Blocking {}
 
 fn player_input(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Player, &mut Position, &mut Transform)>,
-    blocking_entities: Query<(&Blocking, &Position)>, // TODO use a queryset dummy
+    mut query: Query<(&mut Position, &mut Transform), With<Player>>,
+    blocking_entities: Query<&Position, (With<Blocking>, Without<Player>)>,
 ) {
     const MOVE_DISTANCE: f32 = 16.0;
     const SPRITE_BUFFER: f32 = 8.0;
@@ -51,22 +51,22 @@ fn player_input(
     const Y_BOUNDS: f32 = 240.0 - SPRITE_BUFFER;
     let mut blocked = false;
 
-    for (mut _player, mut position, mut trans) in query.iter_mut() {
-        if keyboard_input.just_pressed(KeyCode::Right) {
-            position.x += MOVE_DISTANCE;
-        }
-        if keyboard_input.just_pressed(KeyCode::Left) {
-            position.x -= MOVE_DISTANCE;
-        }
-        if keyboard_input.just_pressed(KeyCode::Up) {
-            position.y += MOVE_DISTANCE;
-        }
-        if keyboard_input.just_pressed(KeyCode::Down) {
-            position.y -= MOVE_DISTANCE;
-        }
+    let (mut player_position, mut trans) = query.single_mut();
+    let mut new_position = player_position.clone();
 
-        for (_blocking, blocking_position) in blocking_entities.iter() {
-            if position.x == blocking_position.x && position.y == blocking_position.y {
+    let key = keyboard_input.get_just_pressed().next().cloned();
+
+    if let Some(key) = key {
+        match key {
+            KeyCode::Right => new_position.x += MOVE_DISTANCE,
+            KeyCode::Left => new_position.x -= MOVE_DISTANCE,
+            KeyCode::Up => new_position.y += MOVE_DISTANCE,
+            KeyCode::Down => new_position.y -= MOVE_DISTANCE,
+            _ => return,
+        };
+
+        for blocking_position in blocking_entities.iter() {
+            if new_position.x == blocking_position.x && new_position.y == blocking_position.y {
                 blocked = true;
                 break;
             }
@@ -74,14 +74,11 @@ fn player_input(
 
         if !blocked {
             // Apply movement deltas
-            trans.translation.x += position.x;
-            trans.translation.x = trans.translation.x.clamp(-X_BOUNDS, X_BOUNDS);
-            trans.translation.y += position.y;
-            trans.translation.y = trans.translation.y.clamp(-Y_BOUNDS, Y_BOUNDS);
+            player_position.x = new_position.x.clamp(-X_BOUNDS, X_BOUNDS);
+            player_position.y = new_position.y.clamp(-Y_BOUNDS, Y_BOUNDS);
+            trans.translation.x = player_position.x;
+            trans.translation.y = player_position.y;
         }
-
-        position.x = 0.0;
-        position.y = 0.0;
     }
 }
 
@@ -181,12 +178,12 @@ fn setup(
         .spawn()
         .insert_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle.clone(),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.1)),
+            transform: Transform::from_translation(Vec3::new(8.0, 8.0, 0.1)),
             sprite: TextureAtlasSprite::new(sprite_idx(4, 8)),
             ..Default::default()
         })
         .insert(Player {})
-        .insert(Position { x: 10.0, y: 10.0 });
+        .insert(Position { x: 8.0, y: 8.0 });
 
     draw_map(&map.tiles, commands, &texture_atlas_handle);
 }
