@@ -12,6 +12,10 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .init_resource::<Map>()
+        .insert_resource(SpriteSpecs {
+            size: 16.0,
+            buffer: 8.0,
+        })
         .add_startup_system(setup)
         .add_system(player_input)
         .run()
@@ -40,15 +44,22 @@ struct Map {
 #[derive(Component)]
 struct Blocking {}
 
+#[derive(Default)]
+struct SpriteSpecs {
+    size: f32,
+    buffer: f32,
+}
+
 fn player_input(
     keyboard_input: Res<Input<KeyCode>>,
+    sprite_specs: Res<SpriteSpecs>,
     mut query: Query<(&mut Position, &mut Transform), With<Player>>,
     blocking_entities: Query<&Position, (With<Blocking>, Without<Player>)>,
 ) {
-    const MOVE_DISTANCE: f32 = 16.0;
-    const SPRITE_BUFFER: f32 = 8.0;
-    const X_BOUNDS: f32 = 320.0 - SPRITE_BUFFER;
-    const Y_BOUNDS: f32 = 240.0 - SPRITE_BUFFER;
+    let move_distance: f32 = sprite_specs.size;
+    let sprite_buffer: f32 = sprite_specs.buffer;
+    let x_bounds: f32 = 320.0 - sprite_buffer;
+    let y_bounds: f32 = 240.0 - sprite_buffer;
     let mut blocked = false;
 
     let (mut player_position, mut trans) = query.single_mut();
@@ -58,10 +69,10 @@ fn player_input(
 
     if let Some(key) = key {
         match key {
-            KeyCode::Right => new_position.x += MOVE_DISTANCE,
-            KeyCode::Left => new_position.x -= MOVE_DISTANCE,
-            KeyCode::Up => new_position.y += MOVE_DISTANCE,
-            KeyCode::Down => new_position.y -= MOVE_DISTANCE,
+            KeyCode::Right => new_position.x += move_distance,
+            KeyCode::Left => new_position.x -= move_distance,
+            KeyCode::Up => new_position.y += move_distance,
+            KeyCode::Down => new_position.y -= move_distance,
             _ => return,
         };
 
@@ -74,8 +85,8 @@ fn player_input(
 
         if !blocked {
             // Apply movement deltas
-            player_position.x = new_position.x.clamp(-X_BOUNDS, X_BOUNDS);
-            player_position.y = new_position.y.clamp(-Y_BOUNDS, Y_BOUNDS);
+            player_position.x = new_position.x.clamp(-x_bounds, x_bounds);
+            player_position.y = new_position.y.clamp(-y_bounds, y_bounds);
             trans.translation.x = player_position.x;
             trans.translation.y = player_position.y;
         }
@@ -112,11 +123,10 @@ fn draw_map(
     tiles: &Vec<TileType>,
     mut commands: Commands,
     texture_atlas_handle: &Handle<TextureAtlas>,
+    sprite_specs: Res<SpriteSpecs>,
 ) {
-    const SPRITE_SIZE: f32 = 16.0;
-    const SPRITE_BUFFER: f32 = 8.0;
-    let mut x = -320.0 + SPRITE_BUFFER;
-    let mut y = -240.0 + SPRITE_BUFFER;
+    let mut x = -320.0 + sprite_specs.buffer;
+    let mut y = -240.0 + sprite_specs.buffer;
 
     for tile in tiles.iter() {
         // Render a tile depending upon the tile type
@@ -150,8 +160,8 @@ fn draw_map(
 
         // Move the coordinates
         x += 16.0;
-        if x > 320.0 - SPRITE_SIZE + SPRITE_BUFFER {
-            x = -320.0 + SPRITE_BUFFER;
+        if x > 320.0 - sprite_specs.size + sprite_specs.buffer {
+            x = -320.0 + sprite_specs.buffer;
             y += 16.0;
         }
     }
@@ -162,10 +172,16 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut map: ResMut<Map>,
+    sprite_specs: Res<SpriteSpecs>,
 ) {
     // Setup the sprite sheet
     let texture_handle = asset_server.load("spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(16.0, 16.0), 16, 16);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        Vec2::new(sprite_specs.size, sprite_specs.size),
+        sprite_specs.size as usize,
+        sprite_specs.size as usize,
+    );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     map.tiles = new_map();
@@ -174,18 +190,24 @@ fn setup(
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
     // Spawn the player
+    let player_x = sprite_specs.size - sprite_specs.buffer;
+    let player_y = sprite_specs.size - sprite_specs.buffer;
+
     commands
         .spawn()
         .insert_bundle(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle.clone(),
-            transform: Transform::from_translation(Vec3::new(8.0, 8.0, 0.1)),
+            transform: Transform::from_translation(Vec3::new(player_x, player_y, 0.1)),
             sprite: TextureAtlasSprite::new(sprite_idx(4, 8)),
             ..Default::default()
         })
         .insert(Player {})
-        .insert(Position { x: 8.0, y: 8.0 });
+        .insert(Position {
+            x: player_x,
+            y: player_y,
+        });
 
-    draw_map(&map.tiles, commands, &texture_atlas_handle);
+    draw_map(&map.tiles, commands, &texture_atlas_handle, sprite_specs);
 }
 
 pub fn sprite_idx(x: i32, y: i32) -> usize {
