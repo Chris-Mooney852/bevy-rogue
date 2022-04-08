@@ -38,7 +38,7 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut map: ResMut<GameMap>,
+    mut map: ResMut<Map>,
     sprite_specs: Res<SpriteSpecs>,
 ) {
     // Setup the sprite sheet

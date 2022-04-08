@@ -1,12 +1,12 @@
 use crate::prelude::*;
 
-mod gamemap;
-pub use gamemap::*;
+mod map;
+pub use map::*;
 
 pub struct GameMapPlugin;
 impl Plugin for GameMapPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<GameMap>();
+        app.init_resource::<Map>();
     }
 }
 

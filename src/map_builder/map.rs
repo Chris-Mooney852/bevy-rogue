@@ -7,7 +7,7 @@ pub enum TileType {
 }
 
 #[derive(Default)]
-pub struct GameMap {
+pub struct Map {
     pub tiles: Vec<TileType>,
 }
 
