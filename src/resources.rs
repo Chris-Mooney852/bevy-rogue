@@ -1,13 +1,4 @@
-#[derive(PartialEq, Clone, Copy, Debug)]
-pub enum TileType {
-    Wall,
-    Floor,
-}
-
-#[derive(Default)]
-pub struct Map {
-    pub tiles: Vec<TileType>,
-}
+use crate::prelude::*;
 
 #[derive(Default)]
 pub struct SpriteSpecs {
