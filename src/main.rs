@@ -4,6 +4,10 @@ mod resources;
 mod systems;
 
 mod prelude {
+    pub const SCREEN_WIDTH: f32 = 1920.0;
+    pub const SCREEN_HEIGHT: f32 = 1040.0;
+    pub const SPRITE_SIZE: f32 = 16.0;
+    pub const SPRITE_BUFFER: f32 = SPRITE_SIZE / 2.0;
     pub use crate::components::*;
     pub use crate::map_builder::*;
     pub use crate::resources::*;
@@ -18,8 +22,8 @@ fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Bevy Rogue".to_string(),
-            width: 640.0,
-            height: 480.0,
+            width: SCREEN_WIDTH,
+            height: SCREEN_HEIGHT,
             vsync: true,
             ..Default::default()
         })
@@ -27,10 +31,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(SystemsPlugin)
         .add_plugin(MapsPlugin)
-        .insert_resource(SpriteSpecs {
-            size: 16.0,
-            buffer: 8.0,
-        })
         .add_startup_system(setup)
         .run()
 }
@@ -39,15 +39,14 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    sprite_specs: Res<SpriteSpecs>,
 ) {
     // Setup the sprite sheet
     let texture_handle = asset_server.load("spritesheet.png");
     let texture_atlas = TextureAtlas::from_grid(
         texture_handle,
-        Vec2::new(sprite_specs.size, sprite_specs.size),
-        sprite_specs.size as usize,
-        sprite_specs.size as usize,
+        Vec2::new(SPRITE_SIZE, SPRITE_SIZE),
+        SPRITE_SIZE as usize,
+        SPRITE_SIZE as usize,
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
@@ -55,8 +54,16 @@ fn setup(
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
     // Spawn the player
-    let player_x = sprite_specs.size - sprite_specs.buffer;
-    let player_y = sprite_specs.size - sprite_specs.buffer;
+    let mut player_x = 0.0;
+    let mut player_y = 0.0;
+
+    if (SCREEN_WIDTH / SPRITE_SIZE) % 2.0 != 1.0 {
+        player_x += SPRITE_BUFFER;
+    }
+
+    if (SCREEN_HEIGHT / SPRITE_SIZE) % 2.0 != 1.0 {
+        player_y += SPRITE_BUFFER;
+    }
 
     commands
         .spawn()
@@ -76,5 +83,5 @@ fn setup(
 }
 
 pub fn sprite_idx(x: i32, y: i32) -> usize {
-    (y as usize * 16) + x as usize
+    (y as usize * SPRITE_SIZE as usize) + x as usize
 }

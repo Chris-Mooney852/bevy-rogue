@@ -2,14 +2,12 @@ use crate::prelude::*;
 
 pub fn player_input(
     keyboard_input: Res<Input<KeyCode>>,
-    sprite_specs: Res<SpriteSpecs>,
     mut query: Query<(&mut Position, &mut Transform), With<Player>>,
     blocking_entities: Query<&Position, (With<Blocking>, Without<Player>)>,
 ) {
-    let move_distance: f32 = sprite_specs.size;
-    let sprite_buffer: f32 = sprite_specs.buffer;
-    let x_bounds: f32 = 320.0 - sprite_buffer;
-    let y_bounds: f32 = 240.0 - sprite_buffer;
+    let move_distance: f32 = SPRITE_SIZE;
+    let x_bounds: f32 = (SCREEN_WIDTH / 2.0) - SPRITE_BUFFER;
+    let y_bounds: f32 = (SCREEN_HEIGHT / 2.0) - SPRITE_BUFFER;
     let mut blocked = false;
 
     let (mut player_position, mut trans) = query.single_mut();

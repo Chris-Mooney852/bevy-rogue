@@ -2,9 +2,3 @@
 pub enum TurnState {
     PlayerTurn,
 }
-
-#[derive(Default)]
-pub struct SpriteSpecs {
-    pub size: f32,
-    pub buffer: f32,
-}
