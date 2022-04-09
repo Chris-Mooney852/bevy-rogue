@@ -56,8 +56,6 @@ pub fn spawn_map_tiles(
     let mut x = -320.0 + sprite_specs.buffer;
     let mut y = -240.0 + sprite_specs.buffer;
 
-    println!("test");
-
     for tile in map.tiles.iter() {
         // Render a tile depending upon the tile type
         match tile {
