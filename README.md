@@ -6,7 +6,7 @@ This project follows the amazing tutorial written by Herbert Wolverson [Roguelik
 ## Useage
 
 ``` bash
-Cargo run
+cargo run
 ```
 
 ## Contributing
