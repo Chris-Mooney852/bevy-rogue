@@ -6,7 +6,10 @@ pub use map::*;
 pub struct GameMapPlugin;
 impl Plugin for GameMapPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Map>();
+        let map = Map::new();
+        app.insert_resource(map).add_system_set(
+            SystemSet::on_enter(TurnState::PlayerTurn).with_system(spawn_map_tiles),
+        );
     }
 }
 

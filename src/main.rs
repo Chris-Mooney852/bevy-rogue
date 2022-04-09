@@ -23,6 +23,7 @@ fn main() {
             vsync: true,
             ..Default::default()
         })
+        .add_state(TurnState::PlayerTurn)
         .add_plugins(DefaultPlugins)
         .add_plugin(SystemsPlugin)
         .add_plugin(MapsPlugin)
@@ -38,7 +39,6 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut map: ResMut<Map>,
     sprite_specs: Res<SpriteSpecs>,
 ) {
     // Setup the sprite sheet
@@ -50,8 +50,6 @@ fn setup(
         sprite_specs.size as usize,
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-
-    map.tiles = new_map();
 
     // Add a 2D Camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -74,7 +72,7 @@ fn setup(
             y: player_y,
         });
 
-    draw_map(&map.tiles, commands, &texture_atlas_handle, sprite_specs);
+    commands.insert_resource(texture_atlas_handle);
 }
 
 pub fn sprite_idx(x: i32, y: i32) -> usize {

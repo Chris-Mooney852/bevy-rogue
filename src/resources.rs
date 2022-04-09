@@ -1,4 +1,7 @@
-use crate::prelude::*;
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum TurnState {
+    PlayerTurn,
+}
 
 #[derive(Default)]
 pub struct SpriteSpecs {
